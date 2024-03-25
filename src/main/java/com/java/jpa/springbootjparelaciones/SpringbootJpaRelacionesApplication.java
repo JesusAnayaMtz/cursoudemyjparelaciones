@@ -1,10 +1,7 @@
 package com.java.jpa.springbootjparelaciones;
 
 import com.java.jpa.springbootjparelaciones.entities.*;
-import com.java.jpa.springbootjparelaciones.repositories.ClientRepository;
-import com.java.jpa.springbootjparelaciones.repositories.ClienteDetailsRepository;
-import com.java.jpa.springbootjparelaciones.repositories.InvoiceRepository;
-import com.java.jpa.springbootjparelaciones.repositories.StudentRepository;
+import com.java.jpa.springbootjparelaciones.repositories.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -29,6 +26,9 @@ public class SpringbootJpaRelacionesApplication implements CommandLineRunner {
     @Autowired
     private StudentRepository studentRepository;
 
+    @Autowired
+    private CourseRepository courseRepository;
+
     public static void main(String[] args) {
         SpringApplication.run(SpringbootJpaRelacionesApplication.class, args);
     }
@@ -36,7 +36,197 @@ public class SpringbootJpaRelacionesApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        manyToManyFindById();
+        manyToManyBidireccionalRemoveFind();
+    }
+
+    @Transactional
+    public void manyToManyBidireccionalRemoveFind() {
+        //buscamos con un opcional el estudiante
+        Optional<Student> optionalStudent1 = studentRepository.findOneWithCourses(1L);
+        Optional<Student> optionalStudent2 = studentRepository.findOneWithCourses(2L);
+
+        //asiganamos el estudiante econtrado a una variable
+        Student student1 = optionalStudent1.get();
+        Student student2 = optionalStudent2.get();
+
+        //Buscamos los cursos que se le van asiganr a los estudiantes encontrados
+        Course course1 = courseRepository.findOneWithStudents(1L).get();
+        Course course2 = courseRepository.findOneWithStudents(2L).get();
+
+        //se le pasa al primer estudiante los cursos en est ecaso 2
+        student1.addCourse(course1);
+        student1.addCourse(course2);
+
+        //se le pasa al segundo estudiante 1 curso
+        student2.addCourse(course1);
+
+        //se salva en forma de lista el estudiante ya con sus cursos
+        studentRepository.saveAll(List.of(student1, student2));
+        //se imprimen los estudiantes en consola
+        System.out.println(student1);
+        System.out.println(student2);
+
+        Optional<Student> studentOptionalDb = studentRepository.findOneWithCourses(1L);  //buscamos al estudiante con nuestro metodo personalizado
+        if(studentOptionalDb.isPresent()) {  //con un if o igual se puede con el optional validamos que exista
+            Student studentDb = studentOptionalDb.get();   //obtenemos al estudiande para poder ocuparlo
+            Optional<Course> courseOptionalDb = courseRepository.findOneWithStudents(1L);    //pasamos con un optional el curso a eliminar
+            if (courseOptionalDb.isPresent()) {   //validamos que el estudiante este inscrito al curso
+                Course courseDb = courseOptionalDb.get();  //obtenemos el curso a eliminar con get
+                studentDb.removeCourse(courseDb);  //removemos el curso asignao al estudiante obtenido
+
+                studentRepository.save(studentDb);  //guardamos los datos.
+
+                System.out.println(studentDb);
+            }
+        }
+    }
+
+    @Transactional
+    public void manyToManyBidireccionalFind() {
+        //buscamos con un opcional el estudiante
+        Optional<Student> optionalStudent1 = studentRepository.findOneWithCourses(1L);
+        Optional<Student> optionalStudent2 = studentRepository.findOneWithCourses(2L);
+
+        //asiganamos el estudiante econtrado a una variable
+        Student student1 = optionalStudent1.get();
+        Student student2 = optionalStudent2.get();
+
+        //Buscamos los cursos que se le van asiganr a los estudiantes encontrados
+        Course course1 = courseRepository.findOneWithStudents(1L).get();
+        Course course2 = courseRepository.findOneWithStudents(2L).get();
+
+        //se le pasa al primer estudiante los cursos en est ecaso 2
+        student1.addCourse(course1);
+        student1.addCourse(course2);
+
+        //se le pasa al segundo estudiante 1 curso
+        student2.addCourse(course1);
+
+        //se salva en forma de lista el estudiante ya con sus cursos
+        studentRepository.saveAll(List.of(student1, student2));
+        //se imprimen los estudiantes en consola
+        System.out.println(student1);
+        System.out.println(student2);
+    }
+
+    @Transactional
+    public void manyToManyBidireccionalCreateAndRemove(){
+        Student student1 = new Student("Jose", "Diaz");
+        Student student2 = new Student("Emma", "Ruiz");
+
+        Course course1 = new Course("Matematicas", "Andres");
+        Course course2 = new Course("Ciencias", "Nadia");
+
+        //añadimos los cursos ya usando el metodo creao en la clase o entidad
+        student1.addCourse(course1);
+        student1.addCourse(course2);
+
+        student2.addCourse(course1);
+
+        //salvamos ocupando un set ya que asi ponemos pasar los dos estudiantes o tambien se puede ocupar List.of
+        studentRepository.saveAll(Set.of(student1, student2));
+        System.out.println(student1);
+        System.out.println(student2);
+
+        Optional<Student> studentOptionalDb = studentRepository.findOneWithCourses(3L);  //buscamos al estudiante con nuestro metodo personalizado
+        if(studentOptionalDb.isPresent()) {  //con un if o igual se puede con el optional validamos que exista
+            Student studentDb = studentOptionalDb.get();   //obtenemos al estudiande para poder ocuparlo
+            Optional<Course> courseOptionalDb = courseRepository.findOneWithStudents(3L);    //pasamos con un optional el curso a eliminar
+            if (courseOptionalDb.isPresent()) {   //validamos que el estudiante este inscrito al curso
+                Course courseDb = courseOptionalDb.get();  //obtenemos el curso a eliminar con get
+                studentDb.removeCourse(courseDb);  //removemos el curso asignao al estudiante obtenido
+
+                studentRepository.save(studentDb);  //guardamos los datos.
+
+                System.out.println(studentDb);
+            }
+        }
+    }
+    @Transactional
+    public void manyToManyBidireccional(){
+        Student student1 = new Student("Jose", "Diaz");
+        Student student2 = new Student("Emma", "Ruiz");
+
+        Course course1 = new Course("Matematicas", "Andres");
+        Course course2 = new Course("Ciencias", "Nadia");
+
+        //añadimos los cursos ya usando el metodo creao en la clase o entidad
+        student1.addCourse(course1);
+        student1.addCourse(course2);
+
+        student2.addCourse(course1);
+
+        //salvamos ocupando un set ya que asi ponemos pasar los dos estudiantes o tambien se puede ocupar List.of
+        studentRepository.saveAll(Set.of(student1, student2));
+        System.out.println(student1);
+        System.out.println(student2);
+
+    }
+
+    @Transactional
+    public void manyToManyCreateAndRemove(){
+        Student student1 = new Student("Jose", "Diaz");
+        Student student2 = new Student("Emma", "Ruiz");
+
+        Course course1 = new Course("Fisica", "Ernesto");
+        Course course2 = new Course("Geografia", "Luis");
+
+        student1.setCourses(Set.of(course1, course2));
+        student2.setCourses(Set.of(course1));
+
+        //salvamos ocupando un set ya que asi ponemos pasar los dos estudiantes o tambien se puede ocupar List.of
+        studentRepository.saveAll(Set.of(student1, student2));
+        System.out.println(student1);
+        System.out.println(student2);
+
+        //eliminar uyn curso de un estudiante
+        Optional<Student> studentOptionalDb = studentRepository.findOneWithCourses(3L);  //buscamos al estudiante con nuestro metodo personalizado
+        if(studentOptionalDb.isPresent()) {  //con un if o igual se puede con el optional validamos que exista
+            Student studentDb = studentOptionalDb.get();   //obtenemos al estudiande para poder ocuparlo
+            Optional<Course> courseOptionalDb = courseRepository.findById(3L);    //pasamos con un optional el curso a eliminar
+            if (courseOptionalDb.isPresent()) {   //validamos que el estudiante este inscrito al curso
+                Course courseDb = courseOptionalDb.get();  //obtenemos el curso a eliminar con get
+                studentDb.getCourses().remove(courseDb);  //removemos el curso asignao al estudiante obtenido
+
+                studentRepository.save(studentDb);  //guardamos los datos.
+
+                System.out.println(studentDb);
+            }
+        }
+    }
+
+    @Transactional
+    public void manyToManyDeleteFind(){
+        Optional<Student> optionalStudent1 = studentRepository.findById(1L);
+        Optional<Student> optionalStudent2 = studentRepository.findById(2L);
+
+        Student student1 = optionalStudent1.get();
+        Student student2 = optionalStudent2.get();
+
+        Course course1 = courseRepository.findById(1L).get();
+        Course course2 = courseRepository.findById(2L).get();
+
+        student1.setCourses(Set.of(course1,course2));
+        student2.setCourses(Set.of(course2));
+
+        studentRepository.saveAll(List.of(student1, student2));
+        System.out.println(student1);
+        System.out.println(student2);
+
+        //eliminar uyn curso de un estudiante
+        Optional<Student> studentOptionalDb = studentRepository.findOneWithCourses(1L);  //buscamos al estudiante con nuestro metodo personalizado
+        if(studentOptionalDb.isPresent()){  //con un if o igual se puede con el optional validamos que exista
+            Student studentDb = studentOptionalDb.get();   //obtenemos al estudiande para poder ocuparlo
+            Optional<Course> courseOptionalDb = courseRepository.findById(2L);    //pasamos con un optional el curso a eliminar
+            if (courseOptionalDb.isPresent()){   //validamos que el estudiante este inscrito al curso
+                Course courseDb = courseOptionalDb.get();  //obtenemos el curso a eliminar con get
+                studentDb.getCourses().remove(courseDb);  //removemos el curso asignao al estudiante obtenido
+
+                studentRepository.save(studentDb);  //guardamos los datos.
+
+                System.out.println(studentDb);
+            }
+        }
     }
 
     @Transactional
@@ -69,8 +259,8 @@ public class SpringbootJpaRelacionesApplication implements CommandLineRunner {
         Student student1 = optionalStudent1.get();
         Student student2 = optionalStudent2.get();
 
-        Course course1 = new Course("Matematicas", "Andres");
-        Course course2 = new Course("Ciencias", "Nadia");
+        Course course1 = courseRepository.findById(1L).get();
+        Course course2 = courseRepository.findById(2L).get();
 
         student1.setCourses(Set.of(course1,course2));
         student2.setCourses(Set.of(course2));
